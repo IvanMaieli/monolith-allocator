@@ -42,7 +42,7 @@ typedef struct mono_header {
 // Starting pointer of the arena (full page allocated for the process)
 void *arena = NULL;
 
-/*
+/* @mono_init()
  * Request di @arena, i.e. all the space allocated for
  * the specific process, then creates the @mh (mono_header)
  * pointing at the beginning of the @arena, then sets
@@ -60,8 +60,28 @@ void mono_init() {
     mh->next = NULL;
 }
 
+/* @mono_merge() 
+ * This function is used to prevent internal frammentation when
+ * the memory di deallocated (free) with @mono_deloc() function.
+ * It has to search if the block at the right is free, then it merges 
+ * itself with the other block while the right one is free, if not it stops.
+ * This function maximizes the contiguous free memory in order to 
+ * increase the probability to find enough space for most of the @mono_loc()
+ * calls.
+ */
+void mono_merge(mono_header *mptr) {
+    if(mptr == NULL || mptr->next == NULL)
+        return;
+    
+    mono_header *n = mptr->next;
+    while (n->free && n != NULL) {
+        mptr->dim += n->dim + sizeof(mono_header);
+        mptr->next = n->next;
+        n = n->next;
+    }
+}
 
-/*
+/* @mono_loc()
  * This function returns a pointer to the allocated memory requested.
  * The new header is set with offset 'new_header + requested_mem + 1_byte' 
  * (idc about casting in this docs, imagine that everything is in bytes, not
@@ -70,14 +90,16 @@ void mono_init() {
  */
 void *mono_loc(size_t usize) {
     mono_header *mh = (mono_header *) arena;
+    
+    // Check if is possible to find enough contigous space in memory
     if (mh->dim < (usize + sizeof(mono_header)))         
         return NULL;
 
+    // Moving the free memory ahead after the allocated memory
     mono_header *next_h = (mono_header *) ((int8_t *) mh + sizeof(mono_header) + usize);
     next_h->dim = mh->dim - sizeof(mono_header) - usize;
     next_h->free = 1;
     next_h->next = NULL;
-
     mh->dim = usize;
     mh->free = 0;
     mh->next = next_h;
@@ -85,6 +107,28 @@ void *mono_loc(size_t usize) {
     return (void *) (mh + 1);
 }
 
+/* @mono_deloc()
+ * This function frees a block of memory. During the deallocation
+ * we check if the right block is free, if so we merge the blocks;
+ */
+void mono_deloc(void *ptr) {
+    if (ptr == NULL)
+        return;
+
+    // Looking for the header of the pointer passed
+    mono_header *head = ((mono_header *) ptr) - 1;
+    head->free = 1;
+    mono_header *next_h = head->next;
+
+    // Merging all the consecutive blocks if the right ones are free 
+    if (next_h != NULL && next_h->free)
+        mono_merge(head);
+    
+    return;
+}
+
+
+// Just to compile
 int main(void){ return 0; }
 
 
