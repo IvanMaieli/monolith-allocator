@@ -67,6 +67,14 @@ void *TH_malloc(const size_t size) {
     return (void *) (block + 1);
 }
 
+void *TH_calloc(const int num, const size_t size) {
+    const size_t requested = num * size;
+    if (requested <= 0) return NULL;
+    void *ptr = TH_malloc(requested);
+    if (ptr) memset(ptr, 0, requested);
+    return ptr;
+}
+
 void TH_free(const void *ptr) {
     if (ptr == NULL) return;
     TH_block_t *block = (TH_block_t *) ptr - 1;
