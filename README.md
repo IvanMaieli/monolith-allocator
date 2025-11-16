@@ -15,8 +15,6 @@ It is designed to be an educational but fully functional piece of infrastructure
 * **First-Fit Search Strategy:** The `malloc` implementation scans the list for the first block that is sufficiently large to satisfy the user's request.
 * **Aggressive Bidirectional Coalescing:** The `free` function employs a continuous merging strategy (using `while` loops for both left and right directions) to unite all adjacent free blocks into a single large block, thus drastically reducing external fragmentation.
 * **Block Splitting:** When a free block is larger than needed, it is surgically split (`split_block`) into two: one piece for the user and the remainder returned to the free list, minimizing internal fragmentation.
-* **Thread Safety (Base):** Access to the heap is protected by a global `pthread_mutex`, making the allocator safe for use in multi-threaded applications (though performance under high contention is secondary to correctness).
-
 ---
 
 ## 🧱 Core Data Structure
@@ -31,9 +29,9 @@ typedef struct TH_block_t {
     /** Flag: 1 if the block is free, 0 if allocated. */
     int8_t free;
     
-    /** Pointer to the PHYSICALLY next BlockHeader in the heap chain. */
+    /** Pointer to the PHYSICALLY next TH_block_t in the heap chain. */
     struct TH_block_t *next;
     
-    /** Pointer to the PHYSICALLY previous BlockHeader in the heap chain. */
+    /** Pointer to the PHYSICALLY previous TH_block_t in the heap chain. */
     struct TH_block_t *prev;
 } TH_block_t;
