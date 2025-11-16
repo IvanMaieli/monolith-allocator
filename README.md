@@ -24,16 +24,16 @@ It is designed to be an educational but fully functional piece of infrastructure
 The entire memory management logic is built around this single structure, which serves as the metadata header for every block in the arena:
 
 ```c
-typedef struct BlockHeader {
+typedef struct TH_block_t {
     /** Size of the payload (user space) ONLY, not including the header itself. */
     size_t size;
     
     /** Flag: 1 if the block is free, 0 if allocated. */
-    int is_free;
+    int8_t free;
     
     /** Pointer to the PHYSICALLY next BlockHeader in the heap chain. */
-    struct BlockHeader *next;
+    struct TH_block_t *next;
     
     /** Pointer to the PHYSICALLY previous BlockHeader in the heap chain. */
-    struct BlockHeader *prev;
-} BlockHeader;
+    struct TH_block_t *prev;
+} TH_block_t;
